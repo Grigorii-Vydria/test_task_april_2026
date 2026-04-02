@@ -1,0 +1,26 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - git
+  - jq
+  - ca-certificates
+  - python3
+  - python3-venv
+  - ufw
+write_files:
+  - path: /opt/bootstrap-runner.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      # TODO: render secrets safely into cloud-init or fetch them from a secret backend.
+      # Recommended flow:
+      # 1. Install Tailscale and join tailnet using TAILSCALE_AUTHKEY
+      # 2. Keep inbound SSH closed in Hetzner firewall / ufw
+      # 3. Download GitHub runner
+      # 4. Register ephemeral runner using repository registration token
+      # 5. Start runner service
+      echo "Bootstrap placeholder: install tailscale, configure runner, keep SSH private."
+runcmd:
+  - bash /opt/bootstrap-runner.sh

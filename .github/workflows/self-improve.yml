@@ -1,0 +1,50 @@
+name: self-improve
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  self-improve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Build self-improvement snapshot
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: gpt-5.4
+        run: python scripts/self_improve.py
+
+      - name: Validate repository
+        run: bash scripts/run_validation.sh
+
+      - name: Create pull request if changes exist
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: automated self-improvement"
+          title: "chore: automated self-improvement"
+          body: |
+            Automated self-improvement run.
+
+            Guardrails:
+            - only small safe changes should be proposed
+            - tests and lint must pass
+          branch: improvement/automated-${{ github.run_id }}
+          delete-branch: true

@@ -1,0 +1,71 @@
+# self-improvement
+
+Interview task implementation for two goals:
+
+1. **Git automations** — an LLM-driven self-improvement workflow that runs every 2 hours and proposes small, safe repository improvements.
+2. **Ephemeral Hetzner runner** — a one-click, low-cost pattern for provisioning a short-lived self-hosted GitHub Actions runner on Hetzner, running tests, and deleting the VM afterward.
+
+## What is implemented
+
+- Python demo package + tests so CI has real work to execute
+- `self-improve.yml` scheduled every 2 hours
+- `ephemeral-runner-tests.yml` for Hetzner VM lifecycle
+- bootstrap and validation scripts
+- architecture, security, and cost documentation
+- environment-driven scaffolding for Hetzner, GitHub, OpenAI, and optional Tailscale
+
+## Design principles
+
+- **Small safe changes only** for automated self-improvement
+- **PR-first automation** instead of blind pushes to `main`
+- **No public SSH access** on the ephemeral test runner
+- **Destroy infrastructure after tests** to minimize cost
+- **Secrets only through environment / GitHub Secrets**
+
+## Quick start
+
+```bash
+cp .env.example .env
+bash scripts/bootstrap.sh
+source .venv/bin/activate
+bash scripts/run_validation.sh
+```
+
+## Repository layout
+
+```text
+.github/workflows/          GitHub Actions workflows
+cloud-init/                 Hetzner runner bootstrap template
+scripts/                    Bootstrap, provision/destroy, and automation scripts
+src/self_improvement/       Demo Python package
+tests/                      Automated tests
+```
+
+## How self-improvement is intended to work
+
+Current scaffold prepares a repository snapshot and validation pipeline. The production next step is:
+
+1. build a repository context snapshot
+2. ask the LLM for one tiny safe improvement
+3. apply diff with guardrails
+4. run lint + tests
+5. create a PR if validation passes
+
+## How ephemeral runner is intended to work
+
+1. GitHub-hosted runner provisions a cheap Hetzner VM
+2. VM bootstraps through `cloud-init`
+3. runner registers as ephemeral self-hosted runner
+4. tests run on the VM
+5. workflow always destroys the VM at the end
+
+## Secrets expected in GitHub Actions
+
+- `OPENAI_API_KEY`
+- `HCLOUD_TOKEN`
+- `GH_PAT`
+- optional: `TAILSCALE_AUTHKEY`
+
+## Important note
+
+This repo is an interview-grade scaffold with real structure and validation, but external credentials and provider-specific final bootstrap commands are intentionally left as placeholders.

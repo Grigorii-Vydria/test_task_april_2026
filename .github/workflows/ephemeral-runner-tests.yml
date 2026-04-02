@@ -1,0 +1,69 @@
+name: ephemeral-runner-tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  provision-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      runner_name: ${{ steps.meta.outputs.runner_name }}
+      server_id: ${{ steps.provision.outputs.server_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set metadata
+        id: meta
+        run: echo "runner_name=self-improvement-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Install Python deps
+        run: python -m pip install requests
+
+      - name: Provision Hetzner server
+        id: provision
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+          RUNNER_NAME: self-improvement-${{ github.run_id }}
+        run: |
+          python scripts/provision_hetzner.py > provision.json
+          SERVER_ID=$(python - <<PY
+import json
+print(json.load(open("provision.json"))["server"]["id"])
+PY
+)
+          echo "server_id=${SERVER_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for runner to register
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          RUNNER_NAME: self-improvement-${{ github.run_id }}
+        run: python scripts/wait_for_runner.py
+
+  test-on-ephemeral-runner:
+    needs: provision-runner
+    runs-on: [self-hosted, linux, x64, ephemeral, self-improvement]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run validation
+        run: bash scripts/run_validation.sh
+
+  destroy-runner:
+    if: always()
+    needs: [provision-runner, test-on-ephemeral-runner]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python deps
+        run: python -m pip install requests
+      - name: Destroy Hetzner server
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+          HCLOUD_SERVER_ID: ${{ needs.provision-runner.outputs.server_id }}
+        run: python scripts/destroy_hetzner.py
