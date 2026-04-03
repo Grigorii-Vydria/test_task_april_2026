@@ -32,13 +32,8 @@ jobs:
           RUNNER_NAME: self-improvement-${{ github.run_id }}
         run: |
           python scripts/provision_hetzner.py > provision.json
-          SERVER_ID=$(python - <<PY
-import json
-print(json.load(open("provision.json"))["server"]["id"])
-PY
-)
+          SERVER_ID=$(python - <<PY import json print(json.load(open("provision.json"))["server"]["id"]) PY )
           echo "server_id=${SERVER_ID}" >> "$GITHUB_OUTPUT"
-
       - name: Wait for runner to register
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
