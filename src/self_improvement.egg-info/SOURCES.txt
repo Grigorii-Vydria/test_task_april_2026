@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/self_improvement/__init__.py
+src/self_improvement/quality.py
+src/self_improvement.egg-info/PKG-INFO
+src/self_improvement.egg-info/SOURCES.txt
+src/self_improvement.egg-info/dependency_links.txt
+src/self_improvement.egg-info/requires.txt
+src/self_improvement.egg-info/top_level.txt
+tests/test_quality.py
